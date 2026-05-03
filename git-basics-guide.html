@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Git 基礎：從零開始的手把手教學</title>
+<title>Git 手把手教學：從零開始到 GitHub 協作</title>
 <style>
   :root {
     --bg: #fafaf9;
@@ -18,6 +18,8 @@
     --green: #4ade80;
     --red: #f87171;
     --tag-bg: #f5f5f4;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,6 +47,81 @@
     line-height: 1.3;
   }
 
+  /* ===== TAB NAVIGATION ===== */
+  .tab-nav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 14px 20px;
+    border: none;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .tab-btn:hover {
+    background: var(--tag-bg);
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+
+  .tab-btn .tab-label { font-size: 15px; }
+  .tab-btn .tab-sub { font-size: 12px; font-weight: 400; opacity: 0.7; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .progress-seg {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    flex: 1;
+    transition: background 0.3s ease;
+  }
+
+  .progress-seg.done { background: var(--accent); }
+
+  /* ===== COMMON STYLES ===== */
   .meta-block {
     background: var(--accent-light);
     border-left: 3px solid var(--accent);
@@ -56,6 +133,7 @@
   }
 
   .meta-block strong { color: var(--accent); }
+  .meta-block a { color: var(--accent); }
 
   h2 {
     font-size: 1.4rem;
@@ -66,6 +144,8 @@
     border-bottom: 2px solid var(--border);
     letter-spacing: -0.01em;
   }
+
+  h2:first-child { margin-top: 0; }
 
   h3 {
     font-size: 1.1rem;
@@ -241,24 +321,363 @@
   .diff-green { color: var(--green); }
   .diff-red { color: var(--red); }
 
+  /* ===== VISUAL: FLOW DIAGRAM ===== */
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 28px 0;
+    padding: 24px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow-x: auto;
+  }
+
+  .flow-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+
+  .flow-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .flow-icon.working { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+  .flow-icon.staging { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+  .flow-icon.local { background: linear-gradient(135deg, #34d399, #059669); }
+  .flow-icon.remote { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+
+  .flow-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .flow-sublabel {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: -4px;
+  }
+
+  .flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+
+  .flow-arrow-line {
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1;
+  }
+
+  .flow-arrow-cmd {
+    font-size: 10px;
+    font-family: "SF Mono", monospace;
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--accent-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* ===== VISUAL: BRANCH DIAGRAM ===== */
+  .branch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+
+  .branch-diagram-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+  }
+
+  .branch-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .branch-row:last-child { margin-bottom: 0; }
+
+  .branch-name {
+    width: 80px;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: "SF Mono", monospace;
+    text-align: right;
+    padding-right: 12px;
+  }
+
+  .branch-name.main-color { color: var(--accent); }
+  .branch-name.feat-color { color: var(--blue); }
+
+  .branch-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .commit-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .commit-dot.main-bg { background: var(--accent); }
+  .commit-dot.feat-bg { background: var(--blue); }
+  .commit-dot.merge-bg { background: linear-gradient(135deg, var(--accent), var(--blue)); }
+
+  .track-line {
+    width: 32px;
+    height: 3px;
+    flex-shrink: 0;
+  }
+
+  .track-line.main-line { background: var(--accent); }
+  .track-line.feat-line { background: var(--blue); }
+  .track-line.empty { background: transparent; }
+
+  .branch-fork {
+    position: absolute;
+    width: 3px;
+    height: 38px;
+    left: 210px;
+    top: 12px;
+    z-index: 1;
+  }
+
+  .branch-fork.down { background: var(--blue); border-radius: 0 0 8px 0; }
+  .branch-fork.up { background: var(--blue); border-radius: 0 8px 0 0; }
+
+  .branch-caption {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* ===== VISUAL: CONFLICT DEMO ===== */
+  .conflict-demo {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 20px;
+    border-radius: 8px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    margin: 12px 0;
+    position: relative;
+  }
+
+  .conflict-marker { color: #f97316; font-weight: 700; }
+  .conflict-ours { color: #4ade80; }
+  .conflict-theirs { color: #60a5fa; }
+
+  .conflict-label {
+    position: absolute;
+    right: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .conflict-label.ours-label { top: 30px; background: rgba(74,222,128,0.15); color: #4ade80; }
+  .conflict-label.theirs-label { bottom: 30px; background: rgba(96,165,250,0.15); color: #60a5fa; }
+
+  /* ===== VISUAL: STASH DIAGRAM ===== */
+  .stash-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 20px 0;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    flex-wrap: wrap;
+  }
+
+  .stash-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stash-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .stash-icon.messy { background: #fef2f2; border: 2px dashed #fca5a5; }
+  .stash-icon.clean { background: #f0fdf4; border: 2px solid #86efac; }
+  .stash-icon.pocket { background: #eff6ff; border: 2px solid #93c5fd; }
+
+  .stash-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .stash-arrow {
+    font-size: 20px;
+    color: var(--text-secondary);
+  }
+
+  /* ===== CHEAT TABLE ===== */
+  .cheat-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 15px;
+  }
+
+  .cheat-table th {
+    background: var(--tag-bg);
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .cheat-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .cheat-table tr:last-child td { border-bottom: none; }
+
+  /* ===== TAB 2 LINK ===== */
+  .next-tab-cta {
+    background: linear-gradient(135deg, var(--accent-light), #fef3c7);
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 32px 0 0;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .next-tab-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(249,115,22,0.15);
+  }
+
+  .next-tab-cta-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .next-tab-cta-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  /* ===== RESPONSIVE ===== */
   @media (max-width: 600px) {
     .container { padding: 32px 16px 64px; }
     h1 { font-size: 1.6rem; }
     h2 { font-size: 1.2rem; }
     .step-card { padding: 18px; }
     body { font-size: 16px; }
+    .cheat-table { font-size: 14px; }
+    .cheat-table th, .cheat-table td { padding: 8px 10px; }
+    .flow-diagram { padding: 16px 8px; gap: 0; }
+    .flow-node { min-width: 72px; }
+    .flow-icon { width: 44px; height: 44px; font-size: 18px; border-radius: 10px; }
+    .flow-label { font-size: 11px; }
+    .flow-sublabel { font-size: 10px; }
+    .flow-arrow-cmd { font-size: 9px; }
+    .branch-name { width: 60px; font-size: 11px; }
+    .commit-dot { width: 20px; height: 20px; font-size: 9px; }
+    .track-line { width: 20px; }
+    .tab-btn { padding: 10px 12px; }
+    .tab-btn .tab-label { font-size: 14px; }
+    .tab-btn .tab-sub { font-size: 11px; }
   }
 </style>
 </head>
 <body>
 <div class="container">
 
-<h1>Git 基礎：從零開始的手把手教學</h1>
+<h1>Git 手把手教學</h1>
+
+<!-- ===== TAB NAVIGATION ===== -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('basics')">
+    <span class="tab-label">Part 1 — 基礎篇</span>
+    <span class="tab-sub">init / add / commit / log</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('intermediate')">
+    <span class="tab-label">Part 2 — 進階篇</span>
+    <span class="tab-sub">還原 / GitHub / Branch / Merge</span>
+  </button>
+</nav>
+
+<!-- ============================================================ -->
+<!-- TAB 1: BASICS -->
+<!-- ============================================================ -->
+<div id="tab-basics" class="tab-content active">
 
 <div class="meta-block">
   <strong>目標</strong>：搞懂 git 是什麼，會用基本指令記錄程式碼的每一個版本，改壞了也能回去。<br>
   <strong>時間</strong>：順利的話大概 15 分鐘<br>
-  <strong>範圍</strong>：git init、git status、git diff、git add、git commit、git log，還有 Claude Code 的 <code>/commit</code>。推到 GitHub、branch、merge、衝突解決不在這次範圍內。
+  <strong>範圍</strong>：git init、git status、git diff、git add、git commit、git log，還有 Claude Code 的 <code>/commit</code>。
 </div>
 
 <!-- ===== WHAT IS GIT ===== -->
@@ -266,10 +685,37 @@
 <p>你程式碼的存檔系統。RPG 打 Boss 之前會先存檔吧？Git 就是這樣——覺得「這個版本還不錯」就存一個點，之後任何時候都可以回去。</p>
 <p>全部都在你自己的電腦上發生，不需要網路，不需要帳號。</p>
 
+<!-- VISUAL: Git basic flow -->
+<div class="flow-diagram">
+  <div class="flow-node">
+    <div class="flow-icon working">W</div>
+    <div class="flow-label">工作區</div>
+    <div class="flow-sublabel">你在改的檔案</div>
+  </div>
+  <div class="flow-arrow">
+    <div class="flow-arrow-cmd">git add</div>
+    <div class="flow-arrow-line">&rarr;</div>
+  </div>
+  <div class="flow-node">
+    <div class="flow-icon staging">S</div>
+    <div class="flow-label">暫存區</div>
+    <div class="flow-sublabel">準備要存的</div>
+  </div>
+  <div class="flow-arrow">
+    <div class="flow-arrow-cmd">git commit</div>
+    <div class="flow-arrow-line">&rarr;</div>
+  </div>
+  <div class="flow-node">
+    <div class="flow-icon local">R</div>
+    <div class="flow-label">本機 Repo</div>
+    <div class="flow-sublabel">歷史紀錄</div>
+  </div>
+</div>
+
 <!-- ===== PREREQUISITES ===== -->
 <h2>你需要準備的東西</h2>
 <ul class="vocab-list">
-  <li><strong>Git</strong>（版本控制工具本人）：確認有沒有 → 打開 Terminal，輸入 <code>git --version</code>。看到 <code>git version 2.x.x</code> 就有了。沒有 → 輸入 <code>xcode-select --install</code> 跟著步驟走。</li>
+  <li><strong>Git</strong>（版本控制工具本人）：確認有沒有 &rarr; 打開 Terminal，輸入 <code>git --version</code>。看到 <code>git version 2.x.x</code> 就有了。沒有 &rarr; 輸入 <code>xcode-select --install</code> 跟著步驟走。</li>
   <li><strong>Terminal</strong>（打指令的視窗）：按 Cmd + Space，搜尋「Terminal」。</li>
   <li><strong>一個專案資料夾</strong>：裡面有你正在寫的程式碼。還沒有的話，隨便建一個資料夾放幾個檔案也行。</li>
 </ul>
@@ -284,7 +730,7 @@
   <div class="field"><strong>在哪裡</strong>：按 Cmd + Space，打 "Terminal"，按 Enter。</div>
   <div class="field"><strong>你會看到</strong>：一個視窗，裡面有一行文字，最後有閃爍的游標。</div>
   <div class="confirm-box"><strong>確認</strong>：視窗打開，游標在閃。</div>
-  <div class="fail-box"><strong>沒出現的話</strong>：去 Applications → Utilities → Terminal。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：去 Applications &rarr; Utilities &rarr; Terminal。</div>
 </div>
 
 <div class="step-card">
@@ -334,9 +780,9 @@ Untracked files:
 <div class="vocab-list">
   <p><strong>看懂那些字在說什麼：</strong></p>
   <ul style="list-style:none;padding:0;">
-    <li><strong>Untracked files</strong> → 新檔案，git 還沒開始追蹤它</li>
-    <li><strong>modified: xxx</strong> → 這個檔案你改過了，但還沒存到 git 歷史紀錄</li>
-    <li><strong>nothing to commit</strong> → 沒有任何改動</li>
+    <li><strong>Untracked files</strong> &rarr; 新檔案，git 還沒開始追蹤它</li>
+    <li><strong>modified: xxx</strong> &rarr; 這個檔案你改過了，但還沒存到 git 歷史紀錄</li>
+    <li><strong>nothing to commit</strong> &rarr; 沒有任何改動</li>
   </ul>
 </div>
 
@@ -423,7 +869,7 @@ def5678 初始化專案</code></pre>
   <dd>還沒改任何東西，或改了但還沒存檔。先按 Cmd + S 存一下。</dd>
 
   <dt>error: src refspec main does not match any</dt>
-  <dd>還沒做過任何 commit。先跑 <code>git add .</code> → <code>git commit -m "第一次 commit"</code>。</dd>
+  <dd>還沒做過任何 commit。先跑 <code>git add .</code> &rarr; <code>git commit -m "第一次 commit"</code>。</dd>
 
   <dt class="question">commit 的訊息要寫什麼？</dt>
   <dd>寫你「改了什麼」就好。「修正登入 bug」「新增預約頁面」「更新首頁文案」——讓未來的自己看到知道當時在幹嘛就行了。或是用 <code>/commit</code> 讓 Claude 幫你寫。</dd>
@@ -432,7 +878,628 @@ def5678 初始化專案</code></pre>
   <dd>你進入了分頁模式。按 <code>q</code> 就能離開，回到正常的 Terminal。</dd>
 </dl>
 
-
+<!-- CTA to Part 2 -->
+<div class="next-tab-cta" onclick="switchTab('intermediate')">
+  <div class="next-tab-cta-title">Part 2：進階篇 &rarr;</div>
+  <div class="next-tab-cta-desc">學會反悔、推到 GitHub、開 Branch、合併跟解衝突</div>
 </div>
+
+</div><!-- end tab-basics -->
+
+<!-- ============================================================ -->
+<!-- TAB 2: INTERMEDIATE -->
+<!-- ============================================================ -->
+<div id="tab-intermediate" class="tab-content">
+
+<div class="meta-block">
+  <strong>前置條件</strong>：你已經讀完 Part 1 基礎篇，會用 git init、add、commit、log。<br>
+  <strong>目標</strong>：學會反悔（改壞了能回去）、推到 GitHub、開 branch 做新功能、合併跟解衝突。<br>
+  <strong>時間</strong>：順利的話大概 25-30 分鐘<br>
+  <strong>範圍</strong>：.gitignore、git restore、git stash、git reset、GitHub remote、push、pull、clone、branch、merge、衝突解決。
+</div>
+
+<!-- VISUAL: Full flow diagram -->
+<div class="flow-diagram">
+  <div class="flow-node">
+    <div class="flow-icon working">W</div>
+    <div class="flow-label">工作區</div>
+    <div class="flow-sublabel">你在改的檔案</div>
+  </div>
+  <div class="flow-arrow">
+    <div class="flow-arrow-cmd">git add</div>
+    <div class="flow-arrow-line">&rarr;</div>
+  </div>
+  <div class="flow-node">
+    <div class="flow-icon staging">S</div>
+    <div class="flow-label">暫存區</div>
+    <div class="flow-sublabel">準備要存的</div>
+  </div>
+  <div class="flow-arrow">
+    <div class="flow-arrow-cmd">git commit</div>
+    <div class="flow-arrow-line">&rarr;</div>
+  </div>
+  <div class="flow-node">
+    <div class="flow-icon local">R</div>
+    <div class="flow-label">本機 Repo</div>
+    <div class="flow-sublabel">歷史紀錄</div>
+  </div>
+  <div class="flow-arrow">
+    <div class="flow-arrow-cmd">git push</div>
+    <div class="flow-arrow-line">&rarr;</div>
+  </div>
+  <div class="flow-node">
+    <div class="flow-icon remote">G</div>
+    <div class="flow-label">GitHub</div>
+    <div class="flow-sublabel">雲端備份</div>
+  </div>
+</div>
+
+<!-- ===== CHAPTER 1: SAFETY NET ===== -->
+<h2>第一章：安全網——改壞了怎麼辦</h2>
+<p>學 git 最怕的就是「我是不是把東西搞壞了回不去」。這章教你各種「後悔藥」，學完之後你可以放心大膽地改東西。</p>
+
+<!-- Step 1: .gitignore -->
+<div class="step-card">
+  <h3><span class="step-num">1</span> 告訴 git 哪些東西不用管</h3>
+  <div class="field"><strong>做這個</strong>：在專案根目錄建一個叫 <code>.gitignore</code> 的檔案。</div>
+  <div class="field"><strong>在哪裡</strong>：你的專案資料夾最頂層。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code># 在 Terminal 輸入（或用編輯器建立檔案也行）
+touch .gitignore</code></pre>
+  <p>然後打開這個檔案，寫入你要忽略的東西：</p>
+  <pre><code># 套件依賴（超大，不應該進 git）
+node_modules/
+
+# 環境變數（有密碼，絕對不能進 git）
+.env
+.env.local
+
+# macOS 系統檔案（垃圾）
+.DS_Store
+
+# 編輯器設定
+.vscode/
+.idea/</code></pre>
+  <div class="field"><strong>你會看到</strong>：之後跑 <code>git status</code>，被忽略的檔案不會再出現在列表裡。</div>
+  <div class="confirm-box"><strong>確認</strong>：<code>git status</code> 裡面看不到 node_modules 和 .env。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：確認檔名是 <code>.gitignore</code>（前面有點），而且放在專案最頂層。</div>
+  <div class="note">為什麼要忽略？兩個原因：（1）<code>node_modules</code> 動輒幾萬個檔案，推到 GitHub 會爆掉；（2）<code>.env</code> 有密碼和 API key，推上去等於把鑰匙公開給全世界。</div>
+  <div class="note">已經被 git 追蹤的檔案，加進 .gitignore 不會自動消失。要先跑 <code>git rm --cached 檔名</code> 取消追蹤，再 commit。</div>
+</div>
+
+<!-- Step 2: git restore -->
+<div class="step-card">
+  <h3><span class="step-num">2</span> 還沒 commit 的改動，想丟掉</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git restore</code> 把檔案還原到上一次 commit 的狀態。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個（還原單一檔案）</strong>：</div>
+  <pre><code>git restore src/pages/booking.tsx</code></pre>
+  <div class="field"><strong>輸入這個（還原全部改動）</strong>：</div>
+  <pre><code>git restore .</code></pre>
+  <div class="field"><strong>你會看到</strong>：沒有任何輸出——代表成功。去看那個檔案，內容回到改之前的樣子。</div>
+  <div class="confirm-box"><strong>確認</strong>：<code>git status</code> 裡面那個檔案消失了（不再顯示 modified）。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：確認檔案路徑打對了。用 <code>git status</code> 看正確的檔名。</div>
+  <div class="note">這個操作沒有回頭路——還原之後，你改過的東西就真的不見了。所以用之前先確認你真的不要那些改動。如果不確定，用下一步的 <code>git stash</code> 會更安全。</div>
+</div>
+
+<div class="vocab-list">
+  <p><strong>已經 git add 了怎麼辦？</strong></p>
+  <ul style="list-style:none;padding:0;">
+    <li>如果你已經把改動放進暫存區（跑了 <code>git add</code>），要先把它退出來：</li>
+  </ul>
+  <pre><code># 把檔案從暫存區退回去（改動還在，只是退出暫存）
+git restore --staged src/pages/booking.tsx
+
+# 然後再丟掉改動
+git restore src/pages/booking.tsx</code></pre>
+</div>
+
+<!-- Step 3: git stash -->
+<div class="step-card">
+  <h3><span class="step-num">3</span> 改到一半，先放著等下回來</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git stash</code> 把目前的改動「暫時收起來」。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code>git stash</code></pre>
+  <div class="field"><strong>你會看到</strong>：</div>
+  <pre><code>Saved working directory and index state WIP on main: 3a9f2c1 你的 commit 訊息</code></pre>
+
+  <!-- VISUAL: Stash flow -->
+  <div class="stash-visual">
+    <div class="stash-box">
+      <div class="stash-icon messy">&#9998;</div>
+      <div class="stash-text">改到一半</div>
+    </div>
+    <div class="stash-arrow">&xrarr;</div>
+    <div class="stash-box">
+      <div class="stash-icon pocket">&#128230;</div>
+      <div class="stash-text">git stash<br>收進口袋</div>
+    </div>
+    <div class="stash-arrow">&xrarr;</div>
+    <div class="stash-box">
+      <div class="stash-icon clean">&#10003;</div>
+      <div class="stash-text">乾淨工作區<br>去做別的事</div>
+    </div>
+    <div class="stash-arrow">&xrarr;</div>
+    <div class="stash-box">
+      <div class="stash-icon messy">&#9998;</div>
+      <div class="stash-text">git stash pop<br>拿回來繼續</div>
+    </div>
+  </div>
+
+  <div class="confirm-box"><strong>確認</strong>：<code>git stash</code> 之後跑 <code>git status</code> 會看到 <code>nothing to commit</code>。<code>git stash pop</code> 之後改動又回來了。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：如果看到 <code>No local changes to save</code>，表示你沒有任何改動可以收。</div>
+  <div class="note">想像你在煮飯，煮到一半有人按門鈴。你把鍋子從爐子上移開（<code>git stash</code>），去開門處理完（做別的事），回來再把鍋子放回爐子上（<code>git stash pop</code>）。</div>
+</div>
+
+<!-- Step 4: git reset -->
+<div class="step-card">
+  <h3><span class="step-num">4</span> 已經 commit 了，但想反悔</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git reset</code> 把最近的 commit 撤回。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個（保留改動，只是撤回 commit）</strong>：</div>
+  <pre><code>git reset --soft HEAD~1</code></pre>
+  <div class="field"><strong>你會看到</strong>：沒有輸出。但跑 <code>git log --oneline</code> 會發現最後一筆 commit 消失了，而那些改動回到了暫存區。</div>
+  <div class="confirm-box"><strong>確認</strong>：<code>git log --oneline</code> 最上面不再是剛才那筆 commit。<code>git status</code> 顯示那些檔案在 <code>Changes to be committed</code>。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：確認 <code>HEAD~1</code> 的格式——波浪號加數字 1，表示「往前一步」。</div>
+  <div class="note"><code>HEAD~1</code> 是「最近一筆 commit」的意思。<code>HEAD~2</code> 就是「最近兩筆」。<code>--soft</code> 表示「撤回 commit 但保留改動」。還有一個 <code>--mixed</code>（預設值），差別是改動會退回到「未暫存」的狀態。</div>
+  <div class="note">這裡故意不教 <code>--hard</code>，因為它會直接刪掉你的改動，沒有回頭路。等你更熟練之後再學。</div>
+</div>
+
+<div class="vocab-list">
+  <p><strong>這章的新術語：</strong></p>
+  <ul style="list-style:none;padding:0;">
+    <li><strong>.gitignore</strong> &rarr; 告訴 git「不要管這些檔案」的清單</li>
+    <li><strong>git restore</strong> &rarr; 把還沒 commit 的改動丟掉，還原檔案</li>
+    <li><strong>git stash</strong> &rarr; 暫時收起改動，像按了暫停鍵</li>
+    <li><strong>git reset</strong> &rarr; 撤回已經做的 commit</li>
+    <li><strong>HEAD</strong> &rarr; 目前最新的那一筆 commit，你的「現在位置」</li>
+    <li><strong>--staged</strong> &rarr; 指「已經 git add 放進暫存區的」</li>
+  </ul>
+</div>
+
+<!-- ===== CHAPTER 2: GITHUB ===== -->
+<h2>第二章：推到 GitHub</h2>
+<p>到目前為止，你的所有 commit 都存在自己電腦上。這章教你把它推到 GitHub——雲端備份、跟別人協作、或是讓 Claude Code 幫你部署都需要這一步。</p>
+
+<!-- Step 5: GitHub repo -->
+<div class="step-card">
+  <h3><span class="step-num">5</span> 在 GitHub 上建一個 Repository</h3>
+  <div class="field"><strong>做這個</strong>：去 GitHub 網站建立一個新的 repository。</div>
+  <div class="field"><strong>在哪裡</strong>：瀏覽器，打開 github.com。</div>
+  <div class="field"><strong>步驟</strong>：</div>
+  <ol style="padding-left: 20px; margin: 8px 0;">
+    <li>登入 GitHub（沒有帳號就先註冊一個，免費的）</li>
+    <li>右上角按 <code>+</code> &rarr; <code>New repository</code></li>
+    <li>Repository name：輸入你的專案名稱（例如 <code>my-clinic-app</code>）</li>
+    <li>選 <code>Private</code>（私人的，別人看不到）或 <code>Public</code>（公開的）</li>
+    <li>其他選項都不要勾，直接按 <code>Create repository</code></li>
+  </ol>
+  <div class="field"><strong>你會看到</strong>：一個頁面，上面有一堆指令。我們需要的是「push an existing repository」那段。</div>
+  <div class="confirm-box"><strong>確認</strong>：頁面上有顯示一個網址，長得像 <code>https://github.com/你的帳號/你的專案名稱.git</code>。</div>
+  <div class="note">Repository 就是你的專案在 GitHub 上的家。你本機有一份，GitHub 上也有一份，兩邊透過 <code>push</code> 和 <code>pull</code> 同步。</div>
+</div>
+
+<!-- Step 6: git remote -->
+<div class="step-card">
+  <h3><span class="step-num">6</span> 把本機跟 GitHub 連起來</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git remote add</code> 告訴本機的 git「你的 GitHub 位址在這裡」。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡，確認你在專案資料夾內。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code>git remote add origin https://github.com/你的帳號/你的專案名稱.git</code></pre>
+  <p>（把網址換成第 5 步你看到的那個）</p>
+  <div class="field"><strong>你會看到</strong>：沒有任何輸出——代表成功。</div>
+  <div class="confirm-box"><strong>確認</strong>：輸入 <code>git remote -v</code>，會看到 <code>origin</code> 和你的 GitHub 網址。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：如果說 <code>remote origin already exists</code>，表示已經連過了。用 <code>git remote -v</code> 確認網址對不對。</div>
+  <div class="note"><code>origin</code> 是一個名字，代表「遠端那台伺服器」。你可以取別的名字，但大家習慣叫 <code>origin</code>，就像大家習慣把主要分支叫 <code>main</code> 一樣。</div>
+</div>
+
+<!-- Step 7: git push -->
+<div class="step-card">
+  <h3><span class="step-num">7</span> 把 commit 推到 GitHub</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git push</code> 把你本機的 commit 傳到 GitHub。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個（第一次推要加 -u）</strong>：</div>
+  <pre><code>git push -u origin main</code></pre>
+  <div class="field"><strong>你會看到</strong>：</div>
+  <pre><code>Enumerating objects: 15, done.
+Counting objects: 100% (15/15), done.
+Writing objects: 100% (15/15), 3.21 KiB | 3.21 MiB/s, done.
+ * [new branch]      main -> main
+Branch 'main' set up to track remote branch 'main' from 'origin'.</code></pre>
+  <div class="confirm-box"><strong>確認</strong>：去 GitHub 重新整理頁面，你的程式碼出現了。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：如果要求輸入帳號密碼，GitHub 現在不接受密碼了。你需要設定 Personal Access Token 或 SSH Key。最快的方法是安裝 <code>gh</code>（GitHub CLI），然後跑 <code>gh auth login</code> 跟著步驟走。</div>
+  <div class="note"><code>-u</code> 是「記住這個連結」的意思。第一次推的時候加上去，之後就只需要打 <code>git push</code> 就好，不用再重複寫 <code>origin main</code>。</div>
+</div>
+
+<!-- Step 8: git pull -->
+<div class="step-card">
+  <h3><span class="step-num">8</span> 把別人的改動拉下來</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git pull</code> 把 GitHub 上的最新版本拉到你的電腦。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code>git pull</code></pre>
+  <div class="field"><strong>你會看到</strong>（如果有新東西）：</div>
+  <pre><code>remote: Enumerating objects: 5, done.
+Updating 3a9f2c1..b7c8d3e
+Fast-forward
+ src/components/Header.tsx | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)</code></pre>
+  <p>或是 <code>Already up to date.</code>（表示你已經是最新的）。</p>
+  <div class="confirm-box"><strong>確認</strong>：沒有看到錯誤訊息。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：如果說 <code>There is no tracking information</code>，跑 <code>git pull origin main</code>。</div>
+  <div class="note">養成習慣：每次開始工作之前先 <code>git pull</code>。這樣你手上永遠是最新版本，減少之後衝突的機會。</div>
+</div>
+
+<!-- Step 9: git clone -->
+<div class="step-card">
+  <h3><span class="step-num">9</span> 從 GitHub 抓一個現有專案</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git clone</code> 把 GitHub 上的專案整個下載到你的電腦。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡，先 <code>cd</code> 到你想放專案的地方（例如 <code>cd ~/Projects</code>）。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code>git clone https://github.com/某人/某專案.git</code></pre>
+  <div class="field"><strong>你會看到</strong>：</div>
+  <pre><code>Cloning into '某專案'...
+remote: Enumerating objects: 156, done.
+Resolving deltas: 100% (87/87), done.</code></pre>
+  <div class="confirm-box"><strong>確認</strong>：<code>ls</code> 看一下，多了一個跟專案同名的資料夾。<code>cd</code> 進去之後，<code>git log --oneline</code> 能看到歷史紀錄。</div>
+  <div class="note"><code>git clone</code> 等於幫你做了 <code>git init</code> + <code>git remote add</code> + 把所有東西下載好。拿別人的專案或是換電腦的時候用這招。</div>
+</div>
+
+<div class="vocab-list">
+  <p><strong>這章的新術語：</strong></p>
+  <ul style="list-style:none;padding:0;">
+    <li><strong>Repository (repo)</strong> &rarr; 專案的倉庫，包含所有檔案和歷史紀錄</li>
+    <li><strong>Remote</strong> &rarr; 遠端伺服器，通常就是 GitHub</li>
+    <li><strong>origin</strong> &rarr; 遠端伺服器的預設名稱</li>
+    <li><strong>git push</strong> &rarr; 把本機的 commit 傳到 GitHub</li>
+    <li><strong>git pull</strong> &rarr; 把 GitHub 的最新版拉到本機</li>
+    <li><strong>git clone</strong> &rarr; 把 GitHub 上的整個專案下載到本機</li>
+  </ul>
+</div>
+
+<!-- ===== CHAPTER 3: BRANCH ===== -->
+<h2>第三章：Branch——平行宇宙</h2>
+<p>到目前為止你所有的 commit 都在 <code>main</code> 這條線上。但如果你想做一個新功能，又不想影響目前正常運作的版本呢？開一個 branch。</p>
+<p>想像你在寫小說，寫到第十章覺得「如果主角在這裡做了不同的選擇呢？」你不會把原稿擦掉重寫——你會拿一張新的紙，從第十章開始寫另一個版本。Branch 就是那張新的紙。</p>
+
+<!-- VISUAL: Branch diagram -->
+<div class="branch-diagram">
+  <div class="branch-diagram-title">Branch 運作方式</div>
+  <div style="position:relative">
+    <div class="branch-row">
+      <div class="branch-name main-color">main</div>
+      <div class="branch-track">
+        <div class="commit-dot main-bg">A</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">B</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">C</div>
+        <div class="track-line empty"></div>
+        <div style="width:24px"></div>
+        <div class="track-line empty"></div>
+        <div style="width:24px"></div>
+      </div>
+    </div>
+    <div class="branch-row" style="margin-top: 8px;">
+      <div class="branch-name feat-color">feature</div>
+      <div class="branch-track">
+        <div style="width:24px"></div>
+        <div class="track-line empty"></div>
+        <div style="width:24px"></div>
+        <div class="track-line empty"></div>
+        <div style="width:24px"></div>
+        <div class="track-line feat-line"></div>
+        <div class="commit-dot feat-bg">D</div>
+        <div class="track-line feat-line"></div>
+        <div class="commit-dot feat-bg">E</div>
+      </div>
+    </div>
+  </div>
+  <div class="branch-caption">feature 從 C 分出去，D 和 E 只存在 feature 分支，不影響 main</div>
+</div>
+
+<!-- Step 10: git branch / git switch -->
+<div class="step-card">
+  <h3><span class="step-num">10</span> 建立一個新分支</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git switch -c</code> 建立一個新分支並切換過去。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code>git switch -c feature/add-booking-form</code></pre>
+  <p>（<code>feature/add-booking-form</code> 是分支名稱，換成你要做的事）</p>
+  <div class="field"><strong>你會看到</strong>：</div>
+  <pre><code>Switched to a new branch 'feature/add-booking-form'</code></pre>
+  <div class="confirm-box"><strong>確認</strong>：<code>git branch</code> 會列出所有分支，你的新分支前面有 <code>*</code> 號，代表你現在在那裡。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：確認你至少有一筆 commit。全新的空 repo 沒辦法開分支。</div>
+  <div class="note">分支命名慣例：<code>feature/功能名稱</code>、<code>fix/修什麼</code>、<code>hotfix/緊急修復</code>。不是硬規定，但這樣一看名字就知道這個分支在幹嘛。</div>
+</div>
+
+<!-- Step 11: switch between branches -->
+<div class="step-card">
+  <h3><span class="step-num">11</span> 在分支之間切換</h3>
+  <div class="field"><strong>做這個</strong>：用 <code>git switch</code> 切換到不同的分支。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code># 切回 main
+git switch main
+
+# 切到你的功能分支
+git switch feature/add-booking-form</code></pre>
+  <div class="field"><strong>你會看到</strong>：</div>
+  <pre><code>Switched to branch 'main'</code></pre>
+  <div class="confirm-box"><strong>確認</strong>：切換之後，打開你的程式碼檔案——它會變成那個分支的版本。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：如果說 <code>error: Your local changes would be overwritten</code>，表示你有未 commit 的改動。先 <code>git stash</code> 收起來（第 3 步），或是 <code>git add</code> + <code>git commit</code> 存起來，再切換。</div>
+  <div class="note">切換分支的時候，你的檔案內容會跟著變。不要慌，你在 A 分支做的事不會影響 B 分支——它們是獨立的平行宇宙。</div>
+</div>
+
+<!-- Step 12: work on branch -->
+<div class="step-card">
+  <h3><span class="step-num">12</span> 在分支上做事然後 commit</h3>
+  <div class="field"><strong>做這個</strong>：確認你在功能分支上，改東西，然後 commit。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code># 確認你在哪個分支
+git branch
+
+# 改完程式碼之後，照之前學的流程
+git add .
+git commit -m "新增預約表單的日期選擇器"
+
+# 要推到 GitHub 的話（第一次要加 -u）
+git push -u origin feature/add-booking-form</code></pre>
+  <div class="field"><strong>你會看到</strong>：跟之前一樣的 commit 成功訊息。</div>
+  <div class="confirm-box"><strong>確認</strong>：<code>git log --oneline</code> 看到你的新 commit。切回 <code>git switch main</code> 之後，這個 commit 不在 main 上——它只存在你的功能分支。</div>
+  <div class="note">這就是 branch 的價值：你在功能分支上怎麼改都不會影響 main。等做完、測好了，再合併回去。</div>
+</div>
+
+<div class="vocab-list">
+  <p><strong>這章的新術語：</strong></p>
+  <ul style="list-style:none;padding:0;">
+    <li><strong>Branch（分支）</strong> &rarr; 一條獨立的開發線，跟主線互不影響</li>
+    <li><strong>main</strong> &rarr; 預設的主分支，通常代表「穩定版本」</li>
+    <li><strong>git switch -c</strong> &rarr; 建立新分支並切換過去（<code>-c</code> = create）</li>
+    <li><strong>git switch</strong> &rarr; 切換到已存在的分支</li>
+    <li><strong>git branch</strong> &rarr; 列出所有分支，<code>*</code> 標記你目前在哪</li>
+  </ul>
+</div>
+
+<!-- ===== CHAPTER 4: MERGE ===== -->
+<h2>第四章：Merge——合併你的平行宇宙</h2>
+<p>功能做完了，測試也通過了。現在要把你的功能分支合併回 main，讓正式版本也有這個新功能。</p>
+
+<!-- Step 13: git merge -->
+<div class="step-card">
+  <h3><span class="step-num">13</span> 把分支合併回 main</h3>
+  <div class="field"><strong>做這個</strong>：先切回 main，然後用 <code>git merge</code> 把功能分支合併過來。</div>
+  <div class="field"><strong>在哪裡</strong>：Terminal 視窗裡。</div>
+  <div class="field"><strong>輸入這個</strong>：</div>
+  <pre><code># 第一步：切回 main
+git switch main
+
+# 第二步：把功能分支合併進來
+git merge feature/add-booking-form</code></pre>
+  <div class="field"><strong>你會看到（順利的話）</strong>：</div>
+  <pre><code>Updating 3a9f2c1..e5f6g7h
+Fast-forward
+ src/components/BookingForm.tsx | 45 +++++++++++++++++++++
+ 1 file changed, 45 insertions(+)</code></pre>
+  <div class="confirm-box"><strong>確認</strong>：<code>git log --oneline</code> 在 main 上看到功能分支的 commit 了。</div>
+  <div class="fail-box"><strong>沒出現的話</strong>：確認你已經切回 main（<code>git branch</code> 確認 <code>*</code> 在 main）。</div>
+  <div class="note">合併的方向很重要：你要站在「接收方」去合併「來源方」。所以是先切到 main，再 merge 功能分支——不是反過來。</div>
+</div>
+
+<!-- Step 14: merge types -->
+<div class="step-card">
+  <h3><span class="step-num">14</span> 兩種合併方式（看懂就好）</h3>
+  <div class="field"><strong>這步不用輸入指令</strong>，純粹讓你看懂 git 在做什麼。</div>
+
+  <p style="margin-top:16px"><strong>Fast-forward（快轉）：</strong></p>
+  <p>main 沒有新的 commit，功能分支直接往前走。Git 只要把 main 的指標往前移就好，像是快轉錄音帶。</p>
+
+  <!-- VISUAL: Fast-forward merge -->
+  <div class="branch-diagram">
+    <div class="branch-diagram-title">Fast-forward 合併</div>
+    <div class="branch-row">
+      <div class="branch-name main-color">main</div>
+      <div class="branch-track">
+        <div class="commit-dot main-bg">A</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">B</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">C</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">D</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">E</div>
+      </div>
+    </div>
+    <div class="branch-caption">main 直接快轉到 E，一條直線</div>
+  </div>
+
+  <p><strong>三方合併（Three-way merge）：</strong></p>
+  <p>main 和功能分支都有新的 commit，git 需要建立一個新的「合併 commit」把兩邊的改動整合在一起。</p>
+
+  <!-- VISUAL: Three-way merge -->
+  <div class="branch-diagram">
+    <div class="branch-diagram-title">三方合併</div>
+    <div class="branch-row">
+      <div class="branch-name main-color">main</div>
+      <div class="branch-track">
+        <div class="commit-dot main-bg">A</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">B</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">C</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot main-bg">F</div>
+        <div class="track-line main-line"></div>
+        <div class="commit-dot merge-bg">G</div>
+      </div>
+    </div>
+    <div class="branch-row" style="margin-top: 8px;">
+      <div class="branch-name feat-color">feature</div>
+      <div class="branch-track">
+        <div style="width:24px"></div>
+        <div class="track-line empty"></div>
+        <div style="width:24px"></div>
+        <div class="track-line empty"></div>
+        <div style="width:24px"></div>
+        <div class="track-line feat-line"></div>
+        <div class="commit-dot feat-bg">D</div>
+        <div class="track-line feat-line"></div>
+        <div class="commit-dot feat-bg">E</div>
+      </div>
+    </div>
+    <div class="branch-caption">G 是合併 commit，整合了 main 的 F 和 feature 的 D、E</div>
+  </div>
+
+  <div class="note">你不用選——git 會自動判斷用哪一種。大部分時候你不需要管這些細節，只要知道「兩邊都有改動的時候，git 會幫你合」就好。</div>
+</div>
+
+<!-- Step 15: conflict resolution -->
+<div class="step-card">
+  <h3><span class="step-num">15</span> 衝突解決：兩個人改了同一行</h3>
+  <div class="field"><strong>什麼時候會發生</strong>：你在功能分支改了第 10 行，同時 main 上也有人改了第 10 行。git 不知道該用哪個版本，就會停下來叫你自己決定。</div>
+  <div class="field"><strong>你會看到</strong>：</div>
+  <pre><code>Auto-merging src/components/Header.tsx
+CONFLICT (content): Merge conflict in src/components/Header.tsx
+Automatic merge failed; fix conflicts and then commit the result.</code></pre>
+
+  <p>打開那個檔案，你會看到 git 標記的衝突區域：</p>
+  <div class="conflict-demo">
+    <span class="conflict-label ours-label">main 的版本</span>
+    <span class="conflict-label theirs-label">feature 的版本</span>
+<span class="conflict-marker">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+<span class="conflict-ours">const title = "預約管理系統";</span>
+<span class="conflict-marker">=======</span>
+<span class="conflict-theirs">const title = "智慧預約平台";</span>
+<span class="conflict-marker">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/add-booking-form</span>
+  </div>
+
+  <div class="vocab-list">
+    <p><strong>看懂衝突標記：</strong></p>
+    <ul style="list-style:none;padding:0;">
+      <li><strong>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</strong> &rarr; 你目前所在的分支（main）的版本</li>
+      <li><strong>=======</strong> &rarr; 分隔線</li>
+      <li><strong>&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/...</strong> &rarr; 要合併進來的分支的版本</li>
+    </ul>
+  </div>
+
+  <div class="field"><strong>做這個</strong>：</div>
+  <ol style="padding-left: 20px; margin: 8px 0;">
+    <li>打開有衝突的檔案</li>
+    <li>決定你要留哪個版本（或兩個都留、或寫一個全新的）</li>
+    <li>刪掉 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>、<code>=======</code>、<code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> 這三行標記</li>
+    <li>存檔</li>
+  </ol>
+
+  <p>例如，你決定用新的名稱，改完之後檔案長這樣：</p>
+  <pre><code>const title = "智慧預約平台";</code></pre>
+
+  <div class="field"><strong>然後</strong>：</div>
+  <pre><code># 告訴 git「我處理好了」
+git add src/components/Header.tsx
+
+# 完成合併
+git commit -m "合併 feature/add-booking-form，採用新標題"</code></pre>
+  <div class="confirm-box"><strong>確認</strong>：<code>git status</code> 不再顯示 <code>Unmerged paths</code>。<code>git log --oneline</code> 最上面是你的合併 commit。</div>
+  <div class="fail-box"><strong>卡住的話</strong>：如果衝突太複雜想放棄這次合併，跑 <code>git merge --abort</code> 回到合併前的狀態。</div>
+  <div class="note">衝突不可怕，就是 git 在問你：「兩邊都改了，你說了算。」看清楚兩邊的改動，選你要的版本，刪掉標記，存檔，commit。就這樣。</div>
+</div>
+
+<div class="vocab-list">
+  <p><strong>這章的新術語：</strong></p>
+  <ul style="list-style:none;padding:0;">
+    <li><strong>git merge</strong> &rarr; 把一個分支的改動合併到目前的分支</li>
+    <li><strong>Fast-forward</strong> &rarr; 最簡單的合併，直接快轉</li>
+    <li><strong>Merge conflict（衝突）</strong> &rarr; 兩邊改同一行，git 需要你手動決定</li>
+    <li><strong>git merge --abort</strong> &rarr; 放棄合併，回到合併前的狀態</li>
+  </ul>
+</div>
+
+<!-- ===== CHEAT SHEET ===== -->
+<h2>Cheat Sheet</h2>
+<div class="summary-box">
+  你現在會了：改壞了知道怎麼回去、程式碼推到 GitHub 備份、開 branch 做新功能不影響主線、做完合併回去、遇到衝突也知道怎麼處理。這些就是日常開發 90% 的 git 操作。
+</div>
+
+<table class="cheat-table">
+  <thead>
+    <tr><th>情境</th><th>指令</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>忽略特定檔案</td><td>編輯 <code>.gitignore</code></td></tr>
+    <tr><td>還沒 commit，想丟掉改動</td><td><code>git restore 檔名</code></td></tr>
+    <tr><td>改到一半要去做別的</td><td><code>git stash</code> &rarr; 回來時 <code>git stash pop</code></td></tr>
+    <tr><td>已 commit 想反悔</td><td><code>git reset --soft HEAD~1</code></td></tr>
+    <tr><td>連接 GitHub</td><td><code>git remote add origin 網址</code></td></tr>
+    <tr><td>推到 GitHub</td><td><code>git push</code>（第一次加 <code>-u origin main</code>）</td></tr>
+    <tr><td>拉最新版本</td><td><code>git pull</code></td></tr>
+    <tr><td>下載 GitHub 專案</td><td><code>git clone 網址</code></td></tr>
+    <tr><td>開新分支</td><td><code>git switch -c 分支名稱</code></td></tr>
+    <tr><td>切換分支</td><td><code>git switch 分支名稱</code></td></tr>
+    <tr><td>合併分支</td><td>先 <code>git switch main</code>，再 <code>git merge 分支名稱</code></td></tr>
+    <tr><td>放棄合併</td><td><code>git merge --abort</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ===== TROUBLESHOOTING ===== -->
+<h2>可能會出包的地方</h2>
+<dl class="troubleshoot">
+  <dt>remote: Permission denied / 403</dt>
+  <dd>GitHub 認證有問題。最快解法：安裝 GitHub CLI，跑 <code>gh auth login</code>，跟著步驟走。</dd>
+
+  <dt>error: failed to push some refs</dt>
+  <dd>GitHub 上有你本機沒有的新 commit。先跑 <code>git pull</code> 把最新版拉下來，再 <code>git push</code>。</dd>
+
+  <dt>Your local changes would be overwritten by checkout</dt>
+  <dd>你有未 commit 的改動，git 不讓你切分支。先 <code>git stash</code> 或 <code>git add</code> + <code>git commit</code>。</dd>
+
+  <dt>CONFLICT (content): Merge conflict in...</dt>
+  <dd>不要慌。打開檔案，找到 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> 標記，決定要留哪邊，刪掉標記，存檔，<code>git add</code> + <code>git commit</code>。</dd>
+
+  <dt class="question">分支用完了要刪嗎？</dt>
+  <dd>合併完之後可以刪。<code>git branch -d feature/add-booking-form</code>。用小寫 <code>-d</code>，git 會確認已經合併才讓你刪。</dd>
+
+  <dt class="question">什麼時候該開新分支？</dt>
+  <dd>做新功能、修 bug、任何「不確定會不會搞壞東西」的改動。寧可多開分支，也不要在 main 上賭運氣。</dd>
+
+  <dt class="question">push 跟 commit 有什麼不同？</dt>
+  <dd><code>commit</code> 是存到你自己電腦的歷史紀錄。<code>push</code> 是把那些紀錄傳到 GitHub。你可以 commit 十次之後再一次 push。</dd>
+</dl>
+
+<!-- ===== NEXT STEPS ===== -->
+<h2>下一步可以學的東西</h2>
+<ul class="next-list">
+  <li><strong>Pull Request (PR)</strong>：在 GitHub 上發起合併請求，讓隊友先 review 你的程式碼再合併。團隊協作的標準流程。</li>
+  <li><strong>git rebase</strong>：另一種合併方式，讓歷史紀錄更乾淨。進階技巧，先會 merge 再學 rebase。</li>
+  <li><strong>GitHub Actions / CI/CD</strong>：每次 push 自動跑測試、自動部署。讓機器人幫你做重複的事。</li>
+  <li><strong>git cherry-pick</strong>：從別的分支挑選特定的 commit 合併過來，不用整個分支都合。</li>
+</ul>
+
+</div><!-- end tab-intermediate -->
+
+</div><!-- end container -->
+
+<script>
+function switchTab(tab) {
+  // Update buttons
+  document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
+    btn.classList.toggle('active', (tab === 'basics' && i === 0) || (tab === 'intermediate' && i === 1));
+  });
+
+  // Update content
+  document.getElementById('tab-basics').classList.toggle('active', tab === 'basics');
+  document.getElementById('tab-intermediate').classList.toggle('active', tab === 'intermediate');
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Handle hash navigation
+if (window.location.hash === '#intermediate') {
+  switchTab('intermediate');
+}
+</script>
 </body>
 </html>
